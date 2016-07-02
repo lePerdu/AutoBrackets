@@ -42,6 +42,7 @@ endfunction
 function! AutoBracketsAdd(begin, end)
     execute 'inoremap' a:begin a:begin.a:end.'<Left>' 
     execute 'inoremap' a:begin.'<BS>' '<Nop>'
+	execute 'inoremap' a:begin.'\' a:begin
 
     call add(s:autobracket_types, a:begin . a:end)
 endfunction
