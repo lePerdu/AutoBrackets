@@ -56,6 +56,29 @@ function! AutoBracketsAddIndent(begin, end)
     execute 'inoremap' a:begin.'<CR>' a:begin.'<CR>'.a:end.'<Esc>O'
 endfunction
 
+" Removes an entry from the types of brackets which AutoBrackets completes
+" @param begin - String to start the brackets
+" @param end - String to end the brackets
+function! AutoBracketsRemove(begin, end)
+    let index = -1
+    for i in len(s:autobracket_types)
+        let type = s:autobracket_types[i]
+        if a:begin == type[0] && a:end == type[1]
+            let index = i
+            break
+        endif
+    endfor
+
+    if index < 0
+        return
+    endif
+
+    execute 'iunmap' a:begin
+    execute 'iunmap' a:begin.'<BS>'
+    execute 'iunmap' a:begin.'<CR>'
+    call remove(s:autobracket_types, index)
+endfunction
+
 augroup autobrackets
     autocmd! InsertCharPre * call s:AutoBracketsClose()
 augroup END
