@@ -1,5 +1,5 @@
-" Vim plugin to auto-complete brackets.
-" Maintainer: Zach Petlzer
+" Vim plugin for autocompleting brackets
+"
 
 if exists('g:loaded_autobrackets')
     finish
@@ -7,79 +7,44 @@ endif
 
 let g:loaded_autobrackets = 1
 
-" Each entry contains a string of length at least 2.
-" The first character is the opening character,
-" the second is the closing character,
-" the (optional) third is an escape character
-let s:autobracket_types = []
+" Initializes AutoBrackets
+" The following behaviour is setup:
+"   Typing the starting character in insert mode places both brackets and puts
+"   the cursor between them.
+"   Typing the starting character followed by <BS> does not insert anything,
+"   as it does without the plugin 
+"   Typing the starting character followed by '\' does not insert the ending
+"   character.
+"   Typing the ending character moves the cursor to the right if the
+"   character after the cursor is that character, otherwise, it inserts the
+"   character.
+"   In visual mode, typing '\' and the starting character surrounds the
+"   selected region with the brackets.
+" @param types - A List containing entries of bracket types to complete.
+"                Entries are Strings, with the first index as the
+"                starting character for the brackets and the second as the
+"                ending character for the brackets.
+function! AutoBracketsInit(types)
+    for type in a:types
+        let o = type[0]
+        let c = type[1]
 
-function! s:AutoBracketsClose()
-    let action = 0
-    for type in s:autobracket_types
-        if v:char == type[1]
-            let action = 1
-            break
+        " Escaped (if needed) the closing character.
+        let c_esc = c == '"' ? '\'.c : c
+
+        " Complete brackets in insert mode
+        execute 'inoremap' o.c o.c
+        execute 'inoremap' o.'\' o
+        execute 'inoremap' o.'<BS>' '<Nop>'
+        if o !=# c
+            execute 'inoremap' o o.c.'<Left>'
+            execute 'inoremap <expr>' c 'strpart(getline("."), col(".")-1, 1) == "'.c_esc.'" ? "<Right>" : "'.c_esc.'"'
+        else
+            execute 'inoremap <expr>' o 'strpart(getline("."), col(".")-1, 1) == "'.c_esc.'" ? "<Right>" : "'.c_esc.c_esc.'<Left>"'
         endif
+
+        " Surround visual selection with brackets
+        execute 'vnoremap' '\'.o '<Esc>`>'.v:count.'a'.c.'<Esc>`<'.v:count.'i'.o.'<Esc>'
     endfor
-
-    if !action
-        return
-    endif
-
-    let lnum = line('.')
-    let cnum = col('.')
-    let text = getline(lnum)
-
-    if text[cnum-1] == v:char
-        let v:char = ''
-        call cursor(lnum, cnum+1)
-    endif
 endfunction
-
-" Sets up AutoBrackets to automatically complete specified types of brackets.
-" @param begin - String to start the brackets
-" @param end - String to end the brackets
-function! AutoBracketsAdd(begin, end)
-    execute 'inoremap' a:begin a:begin.a:end.'<Left>' 
-    execute 'inoremap' a:begin.'<BS>' '<Nop>'
-
-    call add(s:autobracket_types, a:begin . a:end)
-endfunction
-
-" Sets up AutoBrackets to automatically complete specified types of brackets
-" and also indent the brackets if <Enter> is pressed following the openning
-" bracket.
-" @param begin - String to start the brackets
-" @param end - String to end the brackets
-function! AutoBracketsAddIndent(begin, end)
-    call AutoBracketsAdd(a:begin, a:end)
-    execute 'inoremap' a:begin.'<CR>' a:begin.'<CR>'.a:end.'<Esc>O'
-endfunction
-
-" Removes an entry from the types of brackets which AutoBrackets completes
-" @param begin - String to start the brackets
-" @param end - String to end the brackets
-function! AutoBracketsRemove(begin, end)
-    let index = -1
-    for i in len(s:autobracket_types)
-        let type = s:autobracket_types[i]
-        if a:begin == type[0] && a:end == type[1]
-            let index = i
-            break
-        endif
-    endfor
-
-    if index < 0
-        return
-    endif
-
-    execute 'iunmap' a:begin
-    execute 'iunmap' a:begin.'<BS>'
-    execute 'iunmap' a:begin.'<CR>'
-    call remove(s:autobracket_types, index)
-endfunction
-
-augroup autobrackets
-    autocmd! InsertCharPre * call s:AutoBracketsClose()
-augroup END
 
