@@ -1,12 +1,15 @@
 # Miniature installer for the plugin
 
 if [ -d ~/.vim/plugin/ ]; then
-    cp ./autobrackets.vim ~/.vim/plugin/
+    DIR=~/.vim/plugin/
 elif [ -d ~/.nvim/plugin/ ]; then
-    cp ./autobrackets.vim ~/.nvim/plugin/
+    DIR=~/.nvim/plugin/
 elif [ -d ~/.config/nvim/plugin/ ]; then
-    cp ./autobrackets.vim ~/.config/nvim/plugin/
+    DIR=~/.config/nvim/plugin/
 else
-    echo 'Could not find folder to install to'
+    echo "Could not find folder into which to install"
+    exit
 fi
+
+cp ./autobrackets.vim $DIR
 
